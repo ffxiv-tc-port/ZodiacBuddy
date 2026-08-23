@@ -195,7 +195,13 @@ internal class AtmaManager : IDisposable
             if (index == 1)
             {
                 // Dungeons
-                AgentContentsFinder.Instance()->OpenRegularDuty(selectedTarget.ContentsFinderConditionId);
+                // AgentContentsFinder.Instance() 由 [Agent] 產生，內部走 AgentModule→GetAgentByInternalId，
+                // AgentModule 未就緒時會回 null（非 A 類 StaticAddress），故判空是必要而非死碼。
+                var contentsFinder = AgentContentsFinder.Instance();
+                if (contentsFinder != null)
+                {
+                    contentsFinder->OpenRegularDuty(selectedTarget.ContentsFinderConditionId);
+                }
             }
             else
             {

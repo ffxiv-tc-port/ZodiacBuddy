@@ -1,0 +1,18 @@
+{
+  "Author": "daemitus, hiroa, MidoriKami, foophoof",
+  "Name": "ZodiacBuddy",
+  "InternalName": "ZodiacBuddy",
+  "Description": "以多種方式協助你完成黃道武器（ARR 傳說武器）。點擊武器筆記本內的目標可開啟副本或開地圖並顯示位置、顯示強化進度與「光之加成」提示。",
+  "Punchline": "帥氣地完成你的黃道武器。",
+  "ApplicableVersion": "any",
+  "RepoUrl": "https://github.com/ffxiv-tc-port/ZodiacBuddy",
+  "IconUrl": "https://raw.githubusercontent.com/ffxiv-tc-port/DalamudPluginsTC/main/icons/ZodiacBuddy.png",
+  "Tags": [
+    "relic",
+    "zodiac",
+    "黃道武器",
+    "atma",
+    "novus"
+  ],
+  "DalamudApiLevel": 13
+}

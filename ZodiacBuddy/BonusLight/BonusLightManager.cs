@@ -116,6 +116,13 @@ public class BonusLightManager : IDisposable
     /// <param name="detectionTime">DateTime of the detection.</param>
     private void SendReport(uint territoryId, DateTime detectionTime)
     {
+        // 台服加固：DisplayBonusDuty 關閉時不對外連線、不上傳未雜湊的 LocalContentId（JWT 的 sub）。
+        // 這是把「外部社群伺服器回報預設關」真正落實的閘門——只改 DisplayBonusDuty 的顯示旗標並不會擋住這條網路路徑。
+        if (!LightConfiguration.DisplayBonusDuty)
+        {
+            return;
+        }
+
         if (Service.ClientState.LocalPlayer == null)
         {
             return;
@@ -181,6 +188,13 @@ public class BonusLightManager : IDisposable
     /// </summary>
     private void RetrieveLastReport()
     {
+        // 台服加固：DisplayBonusDuty 關閉時不向社群伺服器輪詢（原本每 5 分鐘一次的 GET /reports/active）。
+        // 計時器照常存在但在此 no-op，使用者於 UI 開啟後下一次 tick 即恢復，關閉後也立即停止。
+        if (!LightConfiguration.DisplayBonusDuty)
+        {
+            return;
+        }
+
         Service.Framework.RunOnFrameworkThread(() =>
         {
             if (Service.ClientState.LocalPlayer == null)

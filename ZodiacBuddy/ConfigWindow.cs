@@ -87,6 +87,14 @@ internal class ConfigWindow : Window
         {
             Service.Configuration.Save();
         }
+
+        if (ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip(
+                "TC default: ON (no automatic teleport).\n" +
+                "When unchecked, clicking a target in the Relic Notebook will teleport your\n" +
+                "character to the nearest aetheryte (this moves you and may cost gil).");
+        }
     }
 
     private void DrawInterface()
@@ -161,10 +169,20 @@ internal class ConfigWindow : Window
         ImGui.Spacing();
 
         var displayBonusDuty = Service.Configuration.BonusLight.DisplayBonusDuty;
-        if (ImGui.Checkbox("Display duty with the bonus of light in relic info windows", ref displayBonusDuty))
+        if (ImGui.Checkbox("Share & display bonus-light duties (community server)", ref displayBonusDuty))
         {
             Service.Configuration.BonusLight.DisplayBonusDuty = displayBonusDuty;
             Service.Configuration.Save();
+        }
+
+        if (ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip(
+                "TC default: OFF (no external server contact).\n" +
+                "When enabled, the plugin talks to the community server zodiac-buddy-db.fly.dev:\n" +
+                "it fetches which duties currently have a light bonus AND reports your own\n" +
+                "detections. Your reports include your character content ID (not hashed).\n" +
+                "Leave this off if you do not want any data sent to that server.");
         }
 
         ImGui.Separator();
