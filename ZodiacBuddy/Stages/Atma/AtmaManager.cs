@@ -170,22 +170,22 @@ internal class AtmaManager : IDisposable
         if (Service.Configuration.BraveEchoTarget)
         {
             var sb = new SeStringBuilder()
-                .AddText("Target selected: ")
+                .AddText("已選擇目標：")
                 .AddUiForeground(selectedTarget.Name, 62);
 
             if (index == 3) // leves
             {
-                sb.AddText($" from {selectedTarget.Issuer}");
+                sb.AddText($"（委託人：{selectedTarget.Issuer}）");
             }
 
-            sb.AddText($" in {zoneName}.");
+            sb.AddText($"，位於 {zoneName}。");
 
             Service.Plugin.PrintMessage(sb.BuiltString);
         }
 
         if (Service.Configuration.BraveCopyTarget)
         {
-            Service.Plugin.PrintMessage($"Copied {selectedTarget.Name} to clipboard.");
+            Service.Plugin.PrintMessage($"已複製 {selectedTarget.Name} 到剪貼簿。");
             ImGui.SetClipboardText(selectedTarget.Name);
         }
 

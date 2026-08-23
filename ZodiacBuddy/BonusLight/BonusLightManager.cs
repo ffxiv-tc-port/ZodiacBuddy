@@ -233,7 +233,7 @@ public class BonusLightManager : IDisposable
             return;
         }
 
-        var listUpdated = new List<string> {"New light bonus detected"};
+        var listUpdated = new List<string> {"偵測到新的光之加成"};
         foreach (var report in reports)
         {
             if (ReportStillActive(report.Date) &&

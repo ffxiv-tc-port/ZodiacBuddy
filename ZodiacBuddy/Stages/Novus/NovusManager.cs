@@ -174,7 +174,7 @@ internal class NovusManager : IDisposable
                 continue;
             }
 
-            Service.Plugin.PrintMessage($"Light Intensity has increased by {lightLevel.Intensity}.");
+            Service.Plugin.PrintMessage($"光之強度增加了 {lightLevel.Intensity}。");
 
             var territoryId = Service.ClientState.TerritoryType;
             if (!BonusLightDuty.TryGetValue(territoryId, out var territoryLight))
@@ -188,7 +188,7 @@ internal class NovusManager : IDisposable
             }
 
             Service.BonusLightManager.AddLightBonus(territoryId, dutyBeginning, onDutyFromBeginning,
-                $"Light bonus detected on \"{territoryLight.DutyName}\"");
+                $"偵測到「{territoryLight.DutyName}」有光之加成");
             return;
         }
     }
