@@ -123,18 +123,18 @@ public class BonusLightManager : IDisposable
             return;
         }
 
-        if (Service.ClientState.LocalPlayer == null)
+        if (Service.Objects.LocalPlayer == null)
         {
             return;
         }
 
-        if (Service.ClientState.LocalPlayer.HomeWorld is {RowId: 0})
+        if (Service.Objects.LocalPlayer.HomeWorld is {RowId: 0})
         {
             return;
         }
 
-        var datacenter = Service.ClientState.LocalPlayer.HomeWorld.Value.DataCenter.RowId;
-        var world = Service.ClientState.LocalPlayer.HomeWorld.RowId;
+        var datacenter = Service.Objects.LocalPlayer.HomeWorld.Value.DataCenter.RowId;
+        var world = Service.Objects.LocalPlayer.HomeWorld.RowId;
 
         var report = new Report(datacenter, world, territoryId, detectionTime);
         var content = JsonConvert.SerializeObject(report);
@@ -197,12 +197,12 @@ public class BonusLightManager : IDisposable
 
         Service.Framework.RunOnFrameworkThread(() =>
         {
-            if (Service.ClientState.LocalPlayer == null)
+            if (Service.Objects.LocalPlayer == null)
             {
                 return;
             }
 
-            if (Service.ClientState.LocalPlayer.HomeWorld.RowId is 0)
+            if (Service.Objects.LocalPlayer.HomeWorld.RowId is 0)
             {
                 return;
             }
@@ -292,7 +292,7 @@ public class BonusLightManager : IDisposable
     {
         var payload = new Dictionary<string, object>
         {
-            {"sub", Service.ClientState.LocalContentId},
+            {"sub", Service.PlayerState.ContentId},
             {"aud", "ZodiacBuddy"},
             {"iss", "ZodiacBuddyDB"},
             {"iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds()},
