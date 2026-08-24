@@ -57,7 +57,7 @@ internal class ConfigWindow : Window
             DrawBrave();
         }
 
-        if (Service.Interface.IsDevMenuOpen && ImGui.CollapsingHeader("Debug"))
+        if (Service.Interface.IsDevMenuOpen && ImGui.CollapsingHeader("除錯"))
         {
             Debug();
         }
@@ -293,12 +293,12 @@ internal class ConfigWindow : Window
 
     private void Debug()
     {
-        if (ImGui.Button("Check Light Bonus territory"))
+        if (ImGui.Button("檢查光之加成地區資料"))
         {
             DebugTools.CheckBonusLightDutyTerritories();
         }
 
-        if (ImGui.Button("Check Brave books territory"))
+        if (ImGui.Button("檢查黃道勇士試煉書地區資料"))
         {
             DebugTools.CheckBraveDutyTerritory();
         }
