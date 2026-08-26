@@ -116,18 +116,25 @@ public class BonusLightManager : IDisposable
     /// <param name="detectionTime">DateTime of the detection.</param>
     private void SendReport(uint territoryId, DateTime detectionTime)
     {
-        if (Service.ClientState.LocalPlayer == null)
+        // 台服加固：DisplayBonusDuty 關閉時不對外連線、不上傳未雜湊的 LocalContentId（JWT 的 sub）。
+        // 這是把「外部社群伺服器回報預設關」真正落實的閘門——只改 DisplayBonusDuty 的顯示旗標並不會擋住這條網路路徑。
+        if (!LightConfiguration.DisplayBonusDuty)
         {
             return;
         }
 
-        if (Service.ClientState.LocalPlayer.HomeWorld is {RowId: 0})
+        if (Service.Objects.LocalPlayer == null)
         {
             return;
         }
 
-        var datacenter = Service.ClientState.LocalPlayer.HomeWorld.Value.DataCenter.RowId;
-        var world = Service.ClientState.LocalPlayer.HomeWorld.RowId;
+        if (Service.Objects.LocalPlayer.HomeWorld is {RowId: 0})
+        {
+            return;
+        }
+
+        var datacenter = Service.Objects.LocalPlayer.HomeWorld.Value.DataCenter.RowId;
+        var world = Service.Objects.LocalPlayer.HomeWorld.RowId;
 
         var report = new Report(datacenter, world, territoryId, detectionTime);
         var content = JsonConvert.SerializeObject(report);
@@ -181,14 +188,21 @@ public class BonusLightManager : IDisposable
     /// </summary>
     private void RetrieveLastReport()
     {
+        // 台服加固：DisplayBonusDuty 關閉時不向社群伺服器輪詢（原本每 5 分鐘一次的 GET /reports/active）。
+        // 計時器照常存在但在此 no-op，使用者於 UI 開啟後下一次 tick 即恢復，關閉後也立即停止。
+        if (!LightConfiguration.DisplayBonusDuty)
+        {
+            return;
+        }
+
         Service.Framework.RunOnFrameworkThread(() =>
         {
-            if (Service.ClientState.LocalPlayer == null)
+            if (Service.Objects.LocalPlayer == null)
             {
                 return;
             }
 
-            if (Service.ClientState.LocalPlayer.HomeWorld.RowId is 0)
+            if (Service.Objects.LocalPlayer.HomeWorld.RowId is 0)
             {
                 return;
             }
@@ -219,7 +233,7 @@ public class BonusLightManager : IDisposable
             return;
         }
 
-        var listUpdated = new List<string> {"New light bonus detected"};
+        var listUpdated = new List<string> {"偵測到新的光之加成"};
         foreach (var report in reports)
         {
             if (ReportStillActive(report.Date) &&
@@ -278,7 +292,7 @@ public class BonusLightManager : IDisposable
     {
         var payload = new Dictionary<string, object>
         {
-            {"sub", Service.ClientState.LocalContentId},
+            {"sub", Service.PlayerState.ContentId},
             {"aud", "ZodiacBuddy"},
             {"iss", "ZodiacBuddyDB"},
             {"iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds()},

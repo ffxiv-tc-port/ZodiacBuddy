@@ -132,12 +132,12 @@ public abstract class InformationWindow
 
                 ImGui.SameLine();
                 ImGui.Text(
-                    $"Current bonus light window: {startWindowLocal} - {endWindowLocal} ({startWindowServerTime} - {endWindowServerTime} Server Time)");
+                    $"目前的光之加成時段：{startWindowLocal} - {endWindowLocal}（伺服器時間 {startWindowServerTime} - {endWindowServerTime}）");
             }
             else
             {
                 ImGui.SameLine();
-                ImGui.Text($"Bonus light window could not be found, this is a bug.");
+                ImGui.Text($"找不到光之加成時段，這是一個 bug。");
             }
 
             foreach (var territoryId in BonusConfiguration.ActiveBonus)

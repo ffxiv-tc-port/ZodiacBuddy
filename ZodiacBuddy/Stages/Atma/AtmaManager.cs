@@ -94,7 +94,7 @@ internal class AtmaManager : IDisposable
 
     private unsafe void Teleport(uint aetheryteId)
     {
-        if (Service.ClientState.LocalPlayer == null)
+        if (Service.Objects.LocalPlayer == null)
         {
             return;
         }
@@ -170,22 +170,22 @@ internal class AtmaManager : IDisposable
         if (Service.Configuration.BraveEchoTarget)
         {
             var sb = new SeStringBuilder()
-                .AddText("Target selected: ")
+                .AddText("已選擇目標：")
                 .AddUiForeground(selectedTarget.Name, 62);
 
             if (index == 3) // leves
             {
-                sb.AddText($" from {selectedTarget.Issuer}");
+                sb.AddText($"（委託人：{selectedTarget.Issuer}）");
             }
 
-            sb.AddText($" in {zoneName}.");
+            sb.AddText($"，位於 {zoneName}。");
 
             Service.Plugin.PrintMessage(sb.BuiltString);
         }
 
         if (Service.Configuration.BraveCopyTarget)
         {
-            Service.Plugin.PrintMessage($"Copied {selectedTarget.Name} to clipboard.");
+            Service.Plugin.PrintMessage($"已複製 {selectedTarget.Name} 到剪貼簿。");
             ImGui.SetClipboardText(selectedTarget.Name);
         }
 
@@ -195,7 +195,13 @@ internal class AtmaManager : IDisposable
             if (index == 1)
             {
                 // Dungeons
-                AgentContentsFinder.Instance()->OpenRegularDuty(selectedTarget.ContentsFinderConditionId);
+                // AgentContentsFinder.Instance() 由 [Agent] 產生，內部走 AgentModule→GetAgentByInternalId，
+                // AgentModule 未就緒時會回 null（非 A 類 StaticAddress），故判空是必要而非死碼。
+                var contentsFinder = AgentContentsFinder.Instance();
+                if (contentsFinder != null)
+                {
+                    contentsFinder->OpenRegularDuty(selectedTarget.ContentsFinderConditionId);
+                }
             }
             else
             {
