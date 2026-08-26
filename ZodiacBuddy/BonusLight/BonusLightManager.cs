@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -116,8 +117,9 @@ public class BonusLightManager : IDisposable
     /// <param name="detectionTime">DateTime of the detection.</param>
     private void SendReport(uint territoryId, DateTime detectionTime)
     {
-        // 台服加固：DisplayBonusDuty 關閉時不對外連線、不上傳未雜湊的 LocalContentId（JWT 的 sub）。
+        // 台服加固：DisplayBonusDuty 關閉時完全不對外連線，連匿名化後的回報也不送。
         // 這是把「外部社群伺服器回報預設關」真正落實的閘門——只改 DisplayBonusDuty 的顯示旗標並不會擋住這條網路路徑。
+        // 註：JWT 的 sub 自上游 9d2c135 起改送 ContentId 的 SHA-256 雜湊而非明文，但本閘門照舊保留（不連線優於送匿名化資料）。
         if (!LightConfiguration.DisplayBonusDuty)
         {
             return;
@@ -290,9 +292,13 @@ public class BonusLightManager : IDisposable
 
     private string GenerateJWT()
     {
+        var bytes = BitConverter.GetBytes(Service.PlayerState.ContentId);
+        var hash = SHA256.HashData(bytes);
+        var sub = Convert.ToHexString(hash);
+
         var payload = new Dictionary<string, object>
         {
-            {"sub", Service.PlayerState.ContentId},
+            {"sub", sub},
             {"aud", "ZodiacBuddy"},
             {"iss", "ZodiacBuddyDB"},
             {"iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds()},
