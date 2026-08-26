@@ -334,7 +334,7 @@ internal struct BraveBook
         {
             317 => new MapLinkPayload(139, 19, 26.8f, 18.2f), // Surprise                   // Upper La Noscea
             424 => new MapLinkPayload(146, 23, 21.0f, 16.0f), // Heroes of the 2nd          // Southern Thanalan
-            430 => new MapLinkPayload(146, 23, 24.0f, 26.0f), // Return to Cinder           // Southern Thanalan
+            430 => new MapLinkPayload(146, 23, 24.3f, 26.1f), // Return to Cinder           // Southern Thanalan
             475 => new MapLinkPayload(155, 53, 34.0f, 13.0f), // Bellyful                   // Coerthas Central Highlands
             480 => new MapLinkPayload(155, 53, 8.0f, 11.0f), // Giant Seps                 // Coerthas Central Highlands
             486 => new MapLinkPayload(155, 53, 10.0f, 28.0f), // Tower of Power             // Coerthas Central Highlands
@@ -354,7 +354,7 @@ internal struct BraveBook
             604 => new MapLinkPayload(148, 4, 11.0f, 18.0f), // In Spite of It All         // Central Shroud
             611 => new MapLinkPayload(152, 5, 27.0f, 21.0f), // The Enmity of My Enemy     // East Shroud
             616 => new MapLinkPayload(152, 5, 32.0f, 14.0f), // Breaking Dawn              // East Shroud
-            620 => new MapLinkPayload(152, 5, 23.0f, 14.0f), // Everything's Better        // East Shroud
+            620 => new MapLinkPayload(152, 5, 23.7f, 14.5f), // Everything's Better        // East Shroud
             628 => new MapLinkPayload(153, 6, 32.0f, 25.0f), // What Gored Before          // South Shroud
             632 => new MapLinkPayload(154, 7, 21.0f, 19.0f), // Rude Awakening             // North Shroud
             633 => new MapLinkPayload(154, 7, 19.0f, 20.0f), // Air Supply                 // North Shroud
