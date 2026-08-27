@@ -27,6 +27,10 @@ public class Service
     [PluginService] public static IPluginLog PluginLog { get; set; }
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; set; }
 
+    // 動態解析遊戲內名稱（NPC、大國防聯軍）用。台服的繁中名稱都在 Excel 表裡，
+    // 硬編的英文名在台服會直接以英文顯示，改由這個服務按客戶端語言取名。
+    [PluginService] public static ISeStringEvaluator SeStringEvaluator { get; set; }
+
     public static ZodiacBuddyPlugin Plugin { get; set; } = null!;
     public static PluginConfiguration Configuration { get; set; } = null!;
     public static BonusLightManager BonusLightManager { get; set; } = null!;

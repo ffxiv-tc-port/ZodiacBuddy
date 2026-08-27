@@ -1,4 +1,6 @@
-﻿using Dalamud.Game.Text.SeStringHandling.Payloads;
+﻿using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
@@ -82,7 +84,7 @@ internal struct BraveBook
                 var eventItem = bookRow.EventItem.Value;
 
                 // var bookId = bookRow.RowId;
-                var bookName = eventItem.Name.ExtractText();
+                var bookName = ItemUtil.GetItemName(eventItem.RowId, false).ExtractText();
 
                 var enemyCount = bookRow.MonsterNoteTargetCommon.Count;
                 var dungeonCount = bookRow.MonsterNoteTargetNM.Count;
@@ -110,7 +112,7 @@ internal struct BraveBook
 
                     var locationName = mntc.PlaceNameLocation[0].Value.Name.ExtractText();
 
-                    var name = mntc.BNpcName.Value.Singular.ExtractText();
+                    var name = Service.SeStringEvaluator.EvaluateObjStr(ObjectKind.BattleNpc, mntc.BNpcName.RowId);
 
                     var position = GetMonsterPosition(mntc.RowId);
 
@@ -136,7 +138,7 @@ internal struct BraveBook
 
                     var locationName = mntc.PlaceNameLocation[0].Value.Name.ExtractText();
 
-                    var name = mntc.BNpcName.Value.Singular;
+                    var name = Service.SeStringEvaluator.EvaluateObjStr(ObjectKind.BattleNpc, mntc.BNpcName.RowId);
 
                     var position = GetMonsterPosition(mntc.RowId);
 
@@ -145,7 +147,7 @@ internal struct BraveBook
                     // Service.PluginLog.Debug($"Loaded dungeon {mntcID}: {name}");
                     braveBook.Dungeons[i] = new BraveTarget
                     {
-                        Name = name.ExtractText(),
+                        Name = name,
                         ZoneName = zoneName,
                         ZoneId = zoneId,
                         LocationName = locationName,
@@ -164,12 +166,12 @@ internal struct BraveBook
                     var zoneName = position.TerritoryType.Value.PlaceName.Value.Name.ExtractText();
                     var zoneId = position.TerritoryType.RowId;
 
-                    var name = fate.Name;
+                    var name = Service.SeStringEvaluator.Evaluate(fate.Name).ExtractText();
 
                     // Service.PluginLog.Debug($"Loaded fate {fateID}: {name}");
                     braveBook.Fates[i] = new BraveTarget
                     {
-                        Name = name.ExtractText(),
+                        Name = name,
                         ZoneName = zoneName,
                         ZoneId = zoneId,
                         LocationName = string.Empty,
@@ -396,46 +398,34 @@ internal struct BraveBook
 
     private static string GetLeveIssuer(uint leveId)
     {
-        var (gcId, issuerName) = leveId switch
+        // 委託發布人改用 ENpcResident 的 row id 動態取名，不再寫死英文名。
+        // row id 的來源不是猜的：Leve.LevelLevemete -> Level.Object -> ENpcResident，
+        // 已用台服 7.20 EXD 逐筆核對（1002398 魯魯巴納／1002401 瓦力諾／1004348 克·蕾塔伊／
+        // 1007069 洛蒂耶／1007070 艾伊德哈特）。
+        var (gcId, npcId) = leveId switch
         {
-            643 => (0, "Rurubana"),
-            644 => (0, "Rurubana"),
-            645 => (0, "Rurubana"),
-            646 => (0, "Rurubana"),
-            647 => (0, "Rurubana"),
-            649 => (0, "Voilinaut"),
-            650 => (0, "Voilinaut"),
-            652 => (0, "Voilinaut"),
-            657 => (0, "K'leytai"),
-            658 => (0, "K'leytai"),
-            659 => (0, "K'leytai"),
-            848 => (1, "Lodile"),
-            849 => (1, "Lodile"),
-            853 => (2, "Lodile"),
-            855 => (2, "Lodile"),
-            859 => (3, "Lodile"),
-            860 => (3, "Lodile"),
-            863 => (1, "Eidhart"),
-            865 => (1, "Eidhart"),
-            868 => (2, "Eidhart"),
-            870 => (2, "Eidhart"),
-            875 => (3, "Eidhart"),
-            873 => (3, "Eidhart"),
+            643 or 644 or 645 or 646 or 647 => (0, 1002398u), // Rurubana
+            649 or 650 or 652 => (0, 1002401u), // Voilinaut
+            657 or 658 or 659 => (0, 1004348u), // K'leytai
+            848 or 849 => (1, 1007069u), // Lodille
+            853 or 855 => (2, 1007069u), // Lodille
+            859 or 860 => (3, 1007069u), // Lodille
+            863 or 865 => (1, 1007070u), // Eidhart
+            868 or 870 => (2, 1007070u), // Eidhart
+            873 or 875 => (3, 1007070u), // Eidhart
             _ => throw new ArgumentException($"Unregistered leve: {leveId}"),
         };
 
-        var gcName =
-            gcId switch
-            {
-                1 => "Maelstrom",
-                2 => "Order of the Twin Adder",
-                3 => "Immortal Flames",
-                _ => string.Empty,
-            };
+        var issuerName = Service.SeStringEvaluator.EvaluateObjStr(ObjectKind.EventNpc, npcId);
 
-        if (gcName != string.Empty)
+        if (gcId != 0)
         {
-            issuerName += $" ({gcName})";
+            // Addon#826 是 <Sheet(GrandCompany,lnum1,0)>，台服對應 1 黑渦團／2 雙蛇黨／3 不滅隊。
+            var gcName = Service.SeStringEvaluator.EvaluateFromAddon(826, [gcId]);
+            if (!gcName.IsEmpty)
+            {
+                issuerName += $" ({gcName.ExtractText()})";
+            }
         }
 
         return issuerName;

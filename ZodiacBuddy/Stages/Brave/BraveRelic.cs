@@ -1,4 +1,4 @@
-﻿using Lumina.Excel.Sheets;
+﻿using Dalamud.Utility;
 using System.Collections.Generic;
 
 namespace ZodiacBuddy.Stages.Brave;
@@ -28,8 +28,6 @@ public static class BraveRelic
 
     private static string GetItemName(uint itemId)
     {
-        return Service.DataManager.Excel.GetSheet<Item>()
-            .GetRow(itemId).Name
-            .ExtractText();
+        return ItemUtil.GetItemName(itemId, false).ExtractText();
     }
 }
