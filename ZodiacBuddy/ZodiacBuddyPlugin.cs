@@ -42,7 +42,7 @@ public sealed class ZodiacBuddyPlugin : IDalamudPlugin
         Service.Interface.UiBuilder.Draw += windowSystem.Draw;
 
         Service.CommandManager.AddHandler(Command,
-            new CommandInfo(OnCommand) {HelpMessage = "Open a window to edit various settings.", ShowInHelp = true});
+            new CommandInfo(OnCommand) {HelpMessage = "開啟視窗以編輯各項設定。", ShowInHelp = true});
 
         Service.BonusLightManager = new BonusLightManager();
         animusBuddy = new AtmaManager();

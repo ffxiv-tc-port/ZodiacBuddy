@@ -1,13 +1,32 @@
-## Zodiac Buddy
+# Zodiac Buddy
 
-This plugin makes the ARR relic experience slightly easier.
+[foophoof/ZodiacBuddy](https://github.com/foophoof/ZodiacBuddy) 的台服移植版。
+讓 2.0 版本傳說武器（上古武器 → ‧魂靈 → ‧新星 → 黃道勇士）製作流程更輕鬆的小工具。
 
-Adds really handy teleports and shortcuts to the books, when clicking on a leve for example:
+## 功能
 
-![image](https://github.com/user-attachments/assets/c74a3b33-fa73-41a1-a379-31e6105c8879)
+- **任務手冊捷徑**（設定的 Atma 分頁）：在黃道武器的任務手冊中點擊敵人／F.A.T.E.／理符任務，會在地圖上標出位置，
+  並可自動傳送到最近的乙太之光（台服預設關閉，見下方）；點擊副本則開啟任務搜尋器的該副本；
+  可在聊天視窗顯示已選擇的目標、自動複製目標名稱到剪貼簿
+- **新星**：裝備中的‧新星武器會顯示進度資訊視窗；強化視窗可略過文字動畫、顯示光之數值
+- **黃道勇士**：裝備中的黃道勇士武器會顯示進度資訊視窗；強化視窗可略過文字動畫、顯示光之數值
+- **光之加成回報**（預設關閉）：與社群伺服器同步目前哪些副本正處於「光之加成」期間，並可設定只在裝備對應黃道武器時才提示；此功能關閉時完全不會對外連線或回報任何角色資訊
 
-The plugin will teleport you to the nearest aetheryte to that levequest.
+## 使用
 
-Clicking a dungeon for example will open the duty finder to that specific duty:
+- `/pzodiac` 開啟設定視窗
 
-![image](https://github.com/user-attachments/assets/04bfd279-b8c1-461e-8a6f-778364fc4382)
+## 台服版的修改
+
+- 「停用自動傳送」台服預設開啟：點擊任務手冊目標只標地圖、不會移動角色或花費 Gil，要自動傳送請自己取消勾選
+- 「光之加成回報」台服預設關閉
+- 光之加成伺服器連線失敗時不再拋出未處理的例外，設定視窗的伺服器狀態會正確轉紅
+- 介面繁體中文化（委託人與大國防聯軍名稱改用遊戲內建繁中名）
+
+## 安裝
+
+在 Dalamud 設定的「自訂插件庫」加入
+`https://raw.githubusercontent.com/ffxiv-tc-port/DalamudPluginsTC/main/repo.json` 並啟用，
+再從插件列表安裝。
+
+原作者：[foophoof](https://github.com/foophoof)（貢獻者 daemitus、hiroa、MidoriKami）

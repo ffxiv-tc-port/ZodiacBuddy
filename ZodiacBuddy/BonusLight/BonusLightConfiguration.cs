@@ -14,10 +14,13 @@ public class BonusLightConfiguration
     [JsonIgnore] public List<uint> ActiveBonus { get; } = [];
 
     /// <summary>
-    ///     Gets or sets a value indicating whether to display the current duty with light bonus on the Novus information
-    ///     window.
+    ///     Gets or sets a value indicating whether to participate in the crowdsourced bonus-light feature.
+    ///     When enabled, the plugin both fetches active bonus-light duties from the community server and reports
+    ///     your own detections to it, and displays them on the Novus information window.
+    ///     台服預設關閉：不與外部社群伺服器（zodiac-buddy-db.fly.dev）通訊，也不上傳角色資訊。
+    ///     這個開關同時控管「顯示」與「對外連線」——見 BonusLightManager 的 RetrieveLastReport / SendReport 閘門。
     /// </summary>
-    public bool DisplayBonusDuty { get; set; } = true;
+    public bool DisplayBonusDuty { get; set; } = false;
 
     /// <summary>
     ///     Gets or sets a value indicating whether to notify the user of new duty with bonus light when the relic is not

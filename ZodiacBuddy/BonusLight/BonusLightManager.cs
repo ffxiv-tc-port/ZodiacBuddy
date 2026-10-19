@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,10 +20,22 @@ namespace ZodiacBuddy.BonusLight;
 public class BonusLightManager : IDisposable
 {
     private const string BaseUri = "https://zodiac-buddy-db.fly.dev";
+
+    // 同一原因連續失敗時只記第一次與每 10 次。
+    private const int FailureLogInterval = 10;
+
+    // 預設的 100 秒對「每 5 分鐘輪詢一次」太長：失敗要早一點反映到設定視窗的伺服器狀態燈。
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(20);
+
     private readonly JwtEncoder encoder;
+
+    // 失敗記錄的去重狀態由執行緒集區上的 Send continuation 讀寫，一律在此鎖內進行。
+    private readonly object failureLogLock = new();
     private readonly HttpClient httpClient;
     private readonly Timer resetTimer;
     private Timer? checkTimer;
+    private string? lastFailureReason;
+    private int repeatedFailureCount;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BonusLightManager" /> class.
@@ -36,7 +49,7 @@ public class BonusLightManager : IDisposable
             "437AE83BF4E8DB");
 
         encoder = new JwtEncoder(new HS256Algorithm(algoKey));
-        httpClient = new HttpClient();
+        httpClient = new HttpClient {Timeout = RequestTimeout};
 
         var timeOfDay = DateTime.UtcNow.TimeOfDay;
         var nextEvenHour = timeOfDay.Hours % 2 == 0
@@ -116,18 +129,26 @@ public class BonusLightManager : IDisposable
     /// <param name="detectionTime">DateTime of the detection.</param>
     private void SendReport(uint territoryId, DateTime detectionTime)
     {
-        if (Service.ClientState.LocalPlayer == null)
+        // 台服加固：DisplayBonusDuty 關閉時完全不對外連線，連匿名化後的回報也不送。
+        // 這是把「外部社群伺服器回報預設關」真正落實的閘門——只改 DisplayBonusDuty 的顯示旗標並不會擋住這條網路路徑。
+        // JWT 的 sub 送的是 ContentId 的 SHA-256 雜湊而非明文，但本閘門照舊保留（不連線優於送匿名化資料）。
+        if (!LightConfiguration.DisplayBonusDuty)
         {
             return;
         }
 
-        if (Service.ClientState.LocalPlayer.HomeWorld is {RowId: 0})
+        if (Service.Objects.LocalPlayer == null)
         {
             return;
         }
 
-        var datacenter = Service.ClientState.LocalPlayer.HomeWorld.Value.DataCenter.RowId;
-        var world = Service.ClientState.LocalPlayer.HomeWorld.RowId;
+        if (Service.Objects.LocalPlayer.HomeWorld is {RowId: 0})
+        {
+            return;
+        }
+
+        var datacenter = Service.Objects.LocalPlayer.HomeWorld.Value.DataCenter.RowId;
+        var world = Service.Objects.LocalPlayer.HomeWorld.RowId;
 
         var report = new Report(datacenter, world, territoryId, detectionTime);
         var content = JsonConvert.SerializeObject(report);
@@ -181,14 +202,21 @@ public class BonusLightManager : IDisposable
     /// </summary>
     private void RetrieveLastReport()
     {
+        // 台服加固：DisplayBonusDuty 關閉時不向社群伺服器輪詢（原本每 5 分鐘一次的 GET /reports/active）。
+        // 計時器照常存在但在此 no-op，使用者於 UI 開啟後下一次 tick 即恢復，關閉後也立即停止。
+        if (!LightConfiguration.DisplayBonusDuty)
+        {
+            return;
+        }
+
         Service.Framework.RunOnFrameworkThread(() =>
         {
-            if (Service.ClientState.LocalPlayer == null)
+            if (Service.Objects.LocalPlayer == null)
             {
                 return;
             }
 
-            if (Service.ClientState.LocalPlayer.HomeWorld.RowId is 0)
+            if (Service.Objects.LocalPlayer.HomeWorld.RowId is 0)
             {
                 return;
             }
@@ -219,7 +247,7 @@ public class BonusLightManager : IDisposable
             return;
         }
 
-        var listUpdated = new List<string> {"New light bonus detected"};
+        var listUpdated = new List<string> {"偵測到新的光之加成"};
         foreach (var report in reports)
         {
             if (ReportStillActive(report.Date) &&
@@ -259,26 +287,83 @@ public class BonusLightManager : IDisposable
                 LastRequestIsSuccess = response.IsSuccessStatusCode;
                 if (!response.IsSuccessStatusCode)
                 {
-                    Service.PluginLog.Warning($"{request.RequestUri} => [{response.StatusCode:D}] {content}");
+                    LogFailureThrottled(request, $"HTTP {response.StatusCode:D}", content);
                     return;
                 }
 
+                ResetFailureLog();
                 Service.PluginLog.Verbose($"{request.RequestUri} => [{response.StatusCode:D}] {content}");
                 successCallback?.Invoke(content);
             }
             catch (HttpRequestException e)
             {
-                Service.PluginLog.Error($"{request.RequestUri} => {e}");
+                LogFailureThrottled(request, $"{e.GetType().Name}：{e.Message}", e.ToString(), true);
                 LastRequestIsSuccess = false;
+            }
+            catch (OperationCanceledException)
+            {
+                // Timeout 到期與卸載時的取消都走這裡（TaskCanceledException 是它的子類）。
+                LastRequestIsSuccess = false;
+                LogFailureThrottled(request, $"逾時或已取消（上限 {RequestTimeout.TotalSeconds:F0} 秒）");
+            }
+            catch (Exception e)
+            {
+                // 這是 fire-and-forget 的 Task：漏接任何例外都會變成未觀察的 Task 例外，
+                // 而且 LastRequestIsSuccess 會停在上一次的值，讓設定視窗的狀態燈說謊。
+                LastRequestIsSuccess = false;
+                LogFailureThrottled(request, $"{e.GetType().Name}：{e.Message}");
             }
         });
     }
 
+    private void ResetFailureLog()
+    {
+        lock (failureLogLock)
+        {
+            lastFailureReason = null;
+            repeatedFailureCount = 0;
+        }
+    }
+
+    // asError 只改記錄等級，去重計數 Warning 與 Error 共用。
+    private void LogFailureThrottled(HttpRequestMessage request, string reason, string? detail = null, bool asError = false)
+    {
+        int count;
+        lock (failureLogLock)
+        {
+            repeatedFailureCount = reason == lastFailureReason ? repeatedFailureCount + 1 : 1;
+            lastFailureReason = reason;
+            count = repeatedFailureCount;
+        }
+
+        // 只記第一次與每 FailureLogInterval 次，長期失敗才不會每 5 分鐘洗一行。
+        if (count != 1 && count % FailureLogInterval != 0)
+        {
+            return;
+        }
+
+        var suffix = detail is null ? string.Empty : $" {detail}";
+        var message = $"{request.RequestUri} => 要求失敗（連續第 {count} 次）：{reason}{suffix}";
+
+        if (asError)
+        {
+            Service.PluginLog.Error(message);
+        }
+        else
+        {
+            Service.PluginLog.Warning(message);
+        }
+    }
+
     private string GenerateJWT()
     {
+        var bytes = BitConverter.GetBytes(Service.PlayerState.ContentId);
+        var hash = SHA256.HashData(bytes);
+        var sub = Convert.ToHexString(hash);
+
         var payload = new Dictionary<string, object>
         {
-            {"sub", Service.ClientState.LocalContentId},
+            {"sub", sub},
             {"aud", "ZodiacBuddy"},
             {"iss", "ZodiacBuddyDB"},
             {"iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds()},
